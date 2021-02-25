@@ -90,12 +90,17 @@ module API
           success API::V2::Management::Entities::Market
         end
         params do
+          # Id parameter should be deprecated and changed to symbol
           requires :id,
                    type: String,
                    desc: -> { API::V2::Management::Entities::Market.documentation[:id][:desc] }
           optional :engine_id,
                    type: Integer,
                    desc: -> { API::V2::Management::Entities::Market.documentation[:engine_id][:desc] }
+          optional :type,
+                   type: { value: String },
+                   values: { value: -> { ::Market::TYPES }},
+                   default: -> { ::Market::DEFAULT_TYPE }
           optional :state,
                    type: String,
                    values: { value: ::Market::STATES },
@@ -126,7 +131,7 @@ module API
                    desc: -> { API::V2::Management::Entities::Market.documentation[:position][:desc] }
         end
         put '/markets/update' do
-          market = ::Market.find_by!(params.slice(:id))
+          market = ::Market.find_by_symbol_and_type(params[:id], params[:type])
           if market.update(declared(params, include_missing: false))
             present market, with: API::V2::Management::Entities::Market
           else
@@ -136,12 +141,20 @@ module API
         end
 
         # POST: api/v2/management/markets/list
-        desc 'Return markets list.' do
+        desc 'Return list of the markets.' do
           @settings[:scope] = :read_markets
           success API::V2::Management::Entities::Market
         end
+
+        params do
+          optional :type,
+                   type: { value: String },
+                   values: { value: -> { ::Market::TYPES }},
+                   default: -> { ::Market::DEFAULT_TYPE }
+        end
+
         post '/markets/list' do
-          present ::Market.ordered, with: API::V2::Management::Entities::Market
+          present ::Market.where(type: params[:type]).ordered, with: API::V2::Management::Entities::Market
           status 200
         end
 

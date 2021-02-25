@@ -52,7 +52,7 @@ class TradingFee < ApplicationRecord
 
   # == Relationships ========================================================
 
-  belongs_to :market, optional: true
+  belongs_to :market, ->(trading_fee) { where(type: trading_fee.market_type) }, foreign_key: :market_id, primary_key: :symbol, optional: true
 
   # == Validations ==========================================================
 
@@ -68,11 +68,18 @@ class TradingFee < ApplicationRecord
 
   validates :market_id,
             presence: true,
-            inclusion: { in: ->(_fs){ Market.ids.append(ANY) } }
+            inclusion: { in: ->(_fs) { Market.pluck(:symbol).append(ANY) } }
+
+  validates :market_type,
+            presence: true,
+            inclusion: { in: ->(_fs) { Market::TYPES } }
 
   validates :maker, :taker, precision: { less_than_or_eq_to: FEE_PRECISION }
 
   # == Scopes ===============================================================
+
+  scope :spot, -> { where(market_type: 'spot') }
+  scope :qe, -> { where(market_type: 'qe') }
 
   # == Callbacks ============================================================
 
@@ -92,7 +99,7 @@ class TradingFee < ApplicationRecord
     #  5. default (zero fees)
     def for(group:, market_id:)
       TradingFee
-        .where(market_id: [market_id, ANY], group: [group, ANY])
+        .where(market_id: [market_id, ANY], market_type: [market_type, ANY], group: [group, ANY])
         .max_by { |fs| fs.weight } || TradingFee.new
     end
   end
