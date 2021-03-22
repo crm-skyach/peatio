@@ -10,16 +10,17 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2021_03_02_120855) do
+ActiveRecord::Schema.define(version: 2021_03_22_134633) do
 
   create_table "accounts", id: :integer, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
     t.integer "member_id", null: false
     t.string "currency_id", limit: 10, null: false
+    t.string "type", default: "spot", null: false
     t.decimal "balance", precision: 32, scale: 16, default: "0.0", null: false
     t.decimal "locked", precision: 32, scale: 16, default: "0.0", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["currency_id", "member_id"], name: "index_accounts_on_currency_id_and_member_id", unique: true
+    t.index ["currency_id", "member_id", "type"], name: "index_accounts_on_currency_id_and_member_id_and_type_and_unique", unique: true
     t.index ["member_id"], name: "index_accounts_on_member_id"
   end
 
